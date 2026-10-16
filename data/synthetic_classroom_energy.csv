@@ -1,0 +1,29 @@
+timestamp,building,room,room_type,duration_hours,occupancy,fan_status,light_status,ac_energy_kwh,electricity_consumption_kwh,energy_per_person_hour_kwh
+2026-10-15 09:00,SOE,LH-G01,Lecture Hall,1,52,On,On,13.0,16.2,0.25
+2026-10-15 10:00,SOE,LH-G01,Lecture Hall,1,0,On,On,7.5,9.2,
+2026-10-15 11:00,SOE,LH-G01,Lecture Hall,1,0,Off,Off,0.0,0.0,
+2026-10-15 12:00,SOE,LH-G01,Lecture Hall,0.5,26,On,On,5.2,6.4,0.4
+2026-10-15 13:00,SOE,LH-G01,Lecture Hall,1,,On,On,8.7,10.0,
+2026-10-15 14:00,SOE,LH-G01,Lecture Hall,1,30,,On,8.9,9.8,0.2967
+2026-10-15 09:00,SOE,101,Classroom,1,36,On,On,4.5,5.9,0.125
+2026-10-15 10:00,SOE,101,Classroom,1,0,On,Off,3.0,3.7,
+2026-10-15 11:00,SOE,101,Classroom,1,0,Off,Off,0,0,
+2026-10-15 12:00,SOE,101,Classroom,1,24,On,On,4.4,5.5,0.1833
+2026-10-15 13:00,SOE,101,Classroom,1,18,On,,3.5,4.2,0.1944
+2026-10-15 14:00,SOE,101,Classroom,1,0,Off,On,2.1,2.8,
+2026-10-15 09:00,AI Block,LH-101,Lecture Hall,1,58,On,On,12.6,16.0,0.2172
+2026-10-15 10:00,AI Block,LH-101,Lecture Hall,1,0,On,On,6.5,8.2,
+2026-10-15 11:00,AI Block,LH-101,Lecture Hall,1,0,Off,Off,0.0,0,
+2026-10-15 12:00,AI Block,LH-101,Lecture Hall,1,44,On,On,10.8,13.6,0.2455
+2026-10-15 09:00,AI Block,201,Classroom,1,28,On,On,4.2,5.3,0.15
+2026-10-15 10:00,AI Block,201,Classroom,1,0,Off,On,2.2,2.6,
+2026-10-15 11:00,AI Block,201,Classroom,1,0,Off,Off,0,0,
+2026-10-15 12:00,AI Block,201,Classroom,0.5,25,On,,2.8,3.4,0.224
+2026-10-15 09:00,CDSIMER,LH-G02,Lecture Hall,1,82,On,On,16.2,19.1,0.1976
+2026-10-15 10:00,CDSIMER,LH-G02,Lecture Hall,1,0,On,On,7.4,9.2,
+2026-10-15 11:00,CDSIMER,LH-G02,Lecture Hall,1,65,On,On,13.8,16.6,0.2123
+2026-10-15 12:00,CDSIMER,LH-G02,Lecture Hall,1,0,Off,Off,0,0,
+2026-10-15 09:00,CDSIMER,102,Classroom,1,46,On,On,6.5,8.2,0.1413
+2026-10-15 10:00,CDSIMER,102,Classroom,1,0,On,On,3.8,4.4,
+2026-10-15 11:00,CDSIMER,102,Classroom,1,,On,Off,4.2,5.3,
+2026-10-15 12:00,CDSIMER,102,Classroom,1,0,Off,Off,0,0,

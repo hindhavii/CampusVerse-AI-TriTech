@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CampusVerse AI — DSU Digital Twin · Interactive Dashboard</title>
+<style>
+:root{--navy:#071427;--card:rgba(6,22,43,.89);--line:rgba(97,180,255,.26);--cyan:#54d9ff;--blue:#328cff;--white:#f0f7ff;--muted:#93b0cf;--orange:#ff9b57}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;background:#06162d;color:var(--white);font:13px/1.4 Inter,system-ui,-apple-system,Segoe UI,sans-serif;overflow:hidden}
+#app{position:relative;height:100vh;min-height:560px;width:100%;overflow:hidden;background:linear-gradient(#293c62 0%,#665d78 14%,#ca8b8a 34%,#344666 49%,#112a46 68%,#07172c 100%)}
+#scene{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:grab;outline:0}#scene:active{cursor:grabbing}
+#vignette{pointer-events:none;position:absolute;inset:0;background:linear-gradient(180deg,rgba(2,13,33,.90),rgba(2,13,33,.25) 19%,transparent 43%,transparent 68%,rgba(1,12,27,.55)),linear-gradient(90deg,rgba(1,11,26,.35),transparent 19%,transparent 78%,rgba(1,11,26,.18))}
+.glass{background:var(--card);border:1px solid var(--line);box-shadow:0 15px 30px rgba(0,5,20,.35);backdrop-filter:blur(14px);border-radius:13px}
+button{font:inherit;color:inherit;cursor:pointer}button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}
+#head{position:absolute;top:14px;left:18px;right:18px;display:flex;align-items:center;gap:10px;pointer-events:none;z-index:5}
+.brand{min-width:240px;padding:10px 15px;display:flex;gap:11px;align-items:center}.brand .logo{font-size:29px;text-shadow:0 0 18px #55cfff}.brand h1{font-size:22px;line-height:1.15;margin:0;font-weight:800;letter-spacing:.1px}.brand small{color:#63d7fc;font-size:11px}
+.stats{display:flex;gap:8px;margin-left:auto;max-width:750px}.stat{padding:10px 12px;min-width:122px;display:flex;gap:10px;align-items:center;pointer-events:auto;transition:.2s;cursor:pointer}.stat:hover,.navbtn:hover,.toolbtn:hover{border-color:#64d5fe;background:rgba(10,59,92,.92)}.stat .glyph{color:#62d7ff;font-size:22px}.stat b{display:block;font-size:17px}.stat span{font-size:10px;color:var(--muted)}
+#rail{position:absolute;left:16px;top:114px;display:flex;flex-direction:column;gap:7px;width:89px;padding:8px;z-index:6}.navbtn{min-height:63px;border:1px solid transparent;border-radius:10px;background:transparent;color:#bdcee0;display:flex;gap:5px;align-items:center;justify-content:center;flex-direction:column;font-size:11px}.navbtn .ic{font-size:21px}.navbtn.active{background:rgba(26,100,166,.37);border-color:rgba(80,200,255,.64);color:#fff;box-shadow:inset 0 0 18px rgba(8,127,236,.22)}
+#tools{position:absolute;right:15px;top:112px;z-index:6;display:flex;flex-direction:column;gap:8px;padding:10px;width:112px}.toolbtn{padding:10px 6px;border:1px solid transparent;background:transparent;border-radius:9px;text-align:center;font-size:11px;color:#d3e7ff}.toolbtn.active{background:#123862;border-color:#245c9a}
+#notice{position:absolute;left:120px;bottom:20px;z-index:4;max-width:min(470px,52vw);padding:11px 15px;font-size:11px;color:#b6cee9;pointer-events:none}#notice strong{color:#a0e7ff}
+#minimap{position:absolute;right:15px;bottom:19px;width:194px;height:178px;z-index:4;padding:11px;pointer-events:none}#minimap h3{font-size:12px;margin:0 0 7px}#minimap svg{width:100%;height:132px}
+#labels{position:absolute;inset:0;pointer-events:none;z-index:3}.pin{position:absolute;pointer-events:auto;transform:translate(-50%,-100%);padding:6px 11px;white-space:nowrap;color:#e7faff;font-size:12px;font-weight:700;border:1px solid rgba(73,190,255,.75);border-radius:9px;background:rgba(5,32,66,.90);box-shadow:0 0 14px rgba(35,166,255,.35);transition:background .15s,box-shadow .15s;cursor:pointer}.pin:before{content:'';position:absolute;bottom:-17px;left:50%;width:1px;height:15px;background:#53c7ff;box-shadow:0 0 8px #52c9ff}.pin:hover,.pin.selected{background:rgba(23,103,160,.98);box-shadow:0 0 21px #1abafa;border-color:#a1ecff}.pin b{color:#73e1ff;margin-right:5px}
+#context{position:absolute;left:120px;bottom:92px;width:310px;padding:17px;z-index:7;display:none}#context.open{display:block}#context h2{margin:0 0 4px;font-size:17px}#context .sub{font-size:11px;color:var(--muted);margin-bottom:13px}#context p{color:#c4d6e9;font-size:12px;margin:9px 0}#context .row{display:flex;justify-content:space-between;border-top:1px solid #284260;padding:8px 0}.orange{color:#ffb07f}.cyan{color:#7adaff}
+.action{background:linear-gradient(120deg,#087bbf,#205ba1);padding:10px 12px;border:1px solid #43beff;border-radius:8px;font-weight:700;width:100%;margin-top:9px}.action:hover{filter:brightness(1.15)}
+#panel{display:none;position:absolute;right:142px;top:109px;bottom:208px;width:min(340px,32vw);min-height:230px;z-index:7;padding:16px;overflow:auto}#panel.open{display:block}#panel h2{margin:0 0 5px;font-size:17px}#panel p{font-size:12px;color:#adcae6;line-height:1.5}#panel .exit{float:right;border:0;background:transparent;font-size:19px;color:#c1e1f5}
+.section{padding:10px 0;border-top:1px solid rgba(92,154,204,.21)}.section:first-child{border-top:0}.section h3{font-size:13px;margin:0 0 9px;color:#d9f3ff}.item{display:flex;gap:8px;justify-content:space-between;align-items:center;font-size:12px;margin:5px 0}.item span{color:#b1cfe8}.pill{padding:3px 6px;font-size:10px;border-radius:6px;background:rgba(24,127,150,.25);color:#91f7ec}.warn{color:#ffbd8e}.input{width:100%;margin:5px 0 9px;padding:9px 10px;background:#07172c;color:white;border:1px solid #31516f;border-radius:7px;font:inherit}textarea.input{resize:vertical}.smallbtn{padding:5px 7px;background:#123a60;border:1px solid #2b6b9c;border-radius:6px;font-size:11px}
+#backBtn{display:none;position:absolute;top:115px;left:122px;z-index:7;padding:10px 13px;background:#102b4d;border:1px solid #5dc4ff;border-radius:9px;font-weight:bold}#backBtn.open{display:block}
+#toast{position:absolute;left:50%;bottom:84px;transform:translateX(-50%);background:rgba(7,29,51,.94);color:#ddf6ff;padding:10px 15px;border:1px solid #469ccb;border-radius:9px;z-index:10;opacity:0;transition:opacity .2s;pointer-events:none}#toast.show{opacity:1}
+#loadError{display:none;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);padding:26px;z-index:15;max-width:450px;text-align:center}#loadError h2{margin:0 0 10px}
+@media(max-width:1150px){.brand{min-width:205px}.brand h1{font-size:18px}.stats .stat{min-width:100px;padding:8px}.stats .stat:nth-child(4){display:none}#minimap{display:none}}
+@media(max-width:850px){#head{left:8px;right:8px}.stats .stat:not(:first-child){display:none}#rail{left:7px;top:90px;width:64px;padding:4px}.navbtn{font-size:9px;min-height:55px}.navbtn .ic{font-size:16px}#tools{right:7px;top:90px;width:78px;padding:4px}.toolbtn{font-size:9px}#notice{left:80px;max-width:70vw}.pin{font-size:10px;padding:5px}#context{left:80px;bottom:82px;width:250px}#panel{right:91px;top:90px;bottom:125px;width:min(310px,60vw)}#backBtn{left:80px;top:93px}}
+
+/* V2 — No fictional floor plan. Selected facility stays visible in 3D behind its dashboard. */
+#locationView{display:none;position:absolute;z-index:8;right:144px;top:108px;bottom:27px;width:min(485px,41vw);overflow:auto;padding:23px 23px 26px;background:linear-gradient(145deg,rgba(9,27,52,.96),rgba(7,22,40,.96));border:1px solid #3d83a7;box-shadow:0 22px 60px rgba(0,0,0,.50)}
+#locationView.open{display:block}
+#locationView h2{font-size:27px;line-height:1.15;letter-spacing:-.5px;margin:10px 0 5px}#locationView p{font-size:12px;line-height:1.6;color:#b2cce3}
+.location-top{display:flex;align-items:center;justify-content:space-between}.eyebrow{font-size:10px;letter-spacing:1.4px;font-weight:800;color:#5ad2f9}.miniClose{background:#132e4e;border:1px solid #4381ad;border-radius:7px;padding:6px 10px;font-size:17px}
+.locBadge{display:inline-flex;padding:5px 9px;background:rgba(40,115,160,.30);border:1px solid rgba(97,205,249,.3);border-radius:30px;color:#92dbff;font-size:11px;margin-top:7px}
+.locstats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:18px 0}.locstat{background:rgba(17,55,90,.55);border:1px solid rgba(100,191,237,.2);border-radius:10px;padding:12px}.locstat span{display:block;color:#a3bed7;font-size:11px}.locstat strong{font-size:20px;color:#f5fbff}
+.modulelabel{color:#78d7f9;font-size:11px;text-transform:uppercase;letter-spacing:1.2px;font-weight:800;margin:17px 0 9px}
+.moduleGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.modulecard{border:1px solid rgba(100,197,250,.34);border-radius:12px;background:linear-gradient(145deg,rgba(26,72,110,.62),rgba(12,40,72,.7));padding:14px 11px;text-align:left;min-height:106px;transition:.17s}
+.modulecard:hover{transform:translateY(-2px);border-color:#71dcff;box-shadow:0 0 20px rgba(60,182,248,.18)}
+.modulecard .mi{display:block;font-size:24px}.modulecard strong{display:block;margin:5px 0 3px;font-size:13px}.modulecard small{display:block;color:#a0bcd6;font-size:10px;line-height:1.4}
+.locFoot{border-top:1px solid rgba(118,189,231,.22);margin-top:18px;padding-top:12px}.locFoot .action{margin-top:6px}
+.entranceGraphic{margin:12px 0 5px;border:1px solid rgba(85,186,229,.4);border-radius:12px;overflow:hidden;background:linear-gradient(130deg,#172d46,#376383 50%,#122f49);padding:0;position:relative;height:150px}
+.entranceGraphic svg{height:100%;width:100%;display:block}.entranceGraphic .picLabel{position:absolute;bottom:6px;left:9px;background:rgba(4,21,37,.85);font-size:10px;color:#cfeaff;padding:3px 7px;border-radius:5px}
+#panel{right:144px;top:108px;bottom:27px;width:min(485px,41vw);z-index:10;padding:24px;background:linear-gradient(145deg,rgba(8,26,49,.97),rgba(6,22,41,.97));border-color:#3d83a7}
+#panel h2{font-size:23px;margin:0 0 6px}.loc-panel-chip{background:rgba(31,130,185,.22);border-radius:7px;padding:9px 10px;margin:8px 0 13px;color:#d8f4ff}
+#backBtn{top:120px;left:122px}#notice{max-width:340px}
+@media(max-width:1100px){#locationView,#panel{width:45vw;right:105px}#tools{right:5px;width:92px}#head .stats .stat{min-width:100px}}
+@media(max-width:730px){#locationView,#panel{right:8px;top:155px;bottom:14px;width:min(380px,73vw);padding:14px}#locationView h2{font-size:21px}.modulecard{padding:10px 7px;min-height:87px}.modulecard .mi{font-size:19px}#backBtn{top:105px;left:80px}#tools{display:none}}
+
+/* Synthetic energy chart in the EXISTING Campus Control panel — 3D scene unchanged. */
+.energyLegend{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 10px;font-size:10px;color:#c1d7ed}
+.energyLegend span{display:inline-flex;align-items:center;gap:5px}
+.energyDot{width:10px;height:10px;border-radius:3px;display:inline-block}
+.energyChartWrap{max-width:100%;overflow-x:auto;background:rgba(5,23,42,.64);border:1px solid #32516c;border-radius:9px;margin:9px 0;padding:7px}
+.energyChartWrap svg{width:100%;min-width:275px;height:auto;display:block}
+.energyTableWrap{overflow-x:auto;border-radius:8px;border:1px solid #31516f}
+.energyTable{width:100%;border-collapse:collapse;font-size:10px;white-space:nowrap}
+.energyTable th,.energyTable td{padding:7px 6px;text-align:left;border-bottom:1px solid #2d4c66}
+.energyTable th{background:#163451;color:#c7e8fb;position:sticky;top:0}
+.energyTable td{color:#d5e5f5}
+.energyStatus{font-weight:700}
+.energyNote{color:#accce3;font-size:11px;line-height:1.5}
+
+/* CampusVerse picker: original Streamlit dashboard owns all business workflows. */
+#head .stats,#rail,#tools,#context,#panel,#locationView,#backBtn,#minimap{display:none!important}
+#head{top:12px;left:14px;right:auto}#notice{bottom:13px;left:14px;max-width:min(560px,92vw)}
+#app{min-height:580px}#labels{z-index:6}.pin{pointer-events:auto}
+@media(max-width:700px){#head{top:6px;left:6px}.brand{min-width:0;padding:7px 10px}.brand h1{font-size:18px}#notice{left:6px;bottom:6px}}
+</style>
+</head>
+<body>
+<div id="app">
+<canvas id="scene"></canvas><div id="vignette"></div>
+<header id="head"><div class="glass brand"><div class="logo">🏰</div><div><h1>CampusVerse AI</h1><small>DSU Smart Campus Digital Twin</small></div></div><div class="stats"><button class="glass stat" data-panel="crowd"><div class="glyph">♟</div><div><b>3,842</b><span>People • simulated</span></div></button><button class="glass stat" data-panel="control"><div class="glyph">⚡</div><div><b>1.2 MW</b><span>Energy • simulated</span></div></button><button class="glass stat" data-panel="connect"><div class="glyph">Ⓟ</div><div><b>68%</b><span>Parking • simulated</span></div></button><button class="glass stat" data-panel="control"><div class="glyph">♻</div><div><b>320 kg</b><span>Waste • simulated</span></div></button></div></header>
+<nav id="rail" class="glass" aria-label="Campus features"><button class="navbtn active" data-panel="campus"><span class="ic">🏰</span>Campus</button><button class="navbtn" data-panel="crowd"><span class="ic">👥</span>Crowd<br>Command</button><button class="navbtn" data-panel="control"><span class="ic">⚡</span>Campus<br>Control</button><button class="navbtn" data-panel="connect"><span class="ic">📍</span>Campus<br>Connect</button><button class="navbtn" data-panel="brain"><span class="ic">✦</span>Campus<br>Brain</button></nav>
+<nav id="tools" class="glass" aria-label="Scene options"><button class="toolbtn active" data-tool="3d">▣ 3D View</button><button class="toolbtn" data-tool="heat">☷ Heatmap</button><button class="toolbtn" data-tool="labels">◇ Labels</button><button class="toolbtn" data-tool="reset">⟳ Reset</button></nav>
+<div id="labels"></div>
+<button id="backBtn" class="glass">← Back to Campus</button>
+<div id="context" class="glass"></div>
+<aside id="locationView" class="glass" aria-live="polite" aria-label="Selected campus location dashboard">
+ <div class="location-top"><span class="eyebrow">SELECTED LOCATION · SIMULATED</span><button type="button" id="closeLocation" class="miniClose" aria-label="Back to full campus">✕</button></div>
+ <div id="locationBody"></div>
+</aside>
+<div id="panel" class="glass"><button class="exit" id="closePanel" aria-label="Close panel">✕</button><div id="panelBody"></div></div>
+
+<div id="minimap" class="glass"><h3>Campus Overview</h3><svg viewBox="0 0 180 132" aria-hidden="true"><circle cx="90" cy="65" r="53" fill="none" stroke="#28557c" stroke-width="12"/><circle cx="90" cy="65" r="39" fill="none" stroke="#347ca5" stroke-dasharray="2 5"/><path d="M90 8V122M32 65H148M52 24L131 104M130 24L50 104" stroke="#26577e" stroke-width="1"/><circle cx="90" cy="65" r="12" fill="#0c547a" stroke="#61d7f7"/><g fill="#6bd8ff"><circle cx="45" cy="88" r="4"/><circle cx="133" cy="85" r="4"/><circle cx="136" cy="47" r="4"/><circle cx="70" cy="20" r="4"/><circle cx="96" cy="14" r="4"/></g><circle cx="59" cy="93" r="9" fill="none" stroke="#ffad5f" stroke-width="2"/></svg></div>
+<div id="notice" class="glass"><strong>SIMULATED DIGITAL TWIN · DESIGN PROTOTYPE</strong><br>DSU-inspired, not survey-accurate. Drag to rotate · scroll to zoom · click the 3D building itself to open Campus Connect / Control / Crowd Command.</div>
+<div id="toast" role="status"></div><div id="loadError" class="glass"><h2>3D engine couldn't load</h2><p>The first run needs internet so the browser can load Three.js. Connect to the internet and refresh the page.</p></div>
+</div>
+<script>
+// Streamlit custom-component protocol. No additional Python/JS dependencies.
+(function () {
+  function send(type, rest) {
+    window.parent.postMessage(Object.assign({isStreamlitMessage:true,type},rest || {}), '*');
+  }
+  window.cvSelect = function (name) {
+    send('streamlit:setComponentValue', {value:name,dataType:'json'});
+  };
+  send('streamlit:componentReady',{apiVersion:1});
+  send('streamlit:setFrameHeight',{height:740});
+  window.addEventListener('message', function (event) {
+    if (event.data && event.data.type === 'streamlit:render') {
+      send('streamlit:setFrameHeight',{height:740});
+    }
+  });
+})();
+</script>
+<script type="module">
+// Three.js is loaded in the browser. No Node or NPM install is necessary.
+let THREE;
+for(const source of [
+ 'https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js',
+ 'https://unpkg.com/three@0.160.1/build/three.module.js'
+]){try{THREE=await import(source);break;}catch(e){console.warn('Unable to fetch Three.js from',source,e);}}
+if(!THREE){document.getElementById('loadError').style.display='block';}
+else { run(THREE); }
+
+function run(T){
+const $=id=>document.getElementById(id);
+const canvas=$('scene'), labelsEl=$('labels'), context=$('context'), locationView=$('locationView');
+const C={stone:0xcbb8a1,stone2:0xdfcdb4,blue:0x65caff,warm:0xffc887,road:0x273344,grass:0x354b3a,ground:0x394454};
+const makeMat=(hex,roughness=.85,metalness=.04)=>new T.MeshStandardMaterial({color:hex,roughness,metalness});
+const matStone=makeMat(C.stone),matStone2=makeMat(C.stone2),matDark=makeMat(0x26364d),matRoof=makeMat(0x40516b,.7,.2),matWindow=new T.MeshBasicMaterial({color:0xffcf91}),matWindowBlue=new T.MeshBasicMaterial({color:0x9bd5f4}),matRoad=makeMat(C.road),matPave=makeMat(0x6a6870),matGrass=makeMat(C.grass),matWater=new T.MeshStandardMaterial({color:0x137fa5,metalness:.6,roughness:.22,emissive:0x075877,emissiveIntensity:.3});
+const glowMat=new T.MeshBasicMaterial({color:0x47d8ff});
+const renderer=new T.WebGLRenderer({canvas,antialias:true,alpha:true,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.7));renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.25;
+const campusScene=new T.Scene();
+campusScene.fog=new T.FogExp2(0x3d526d,.0032);
+const camera=new T.PerspectiveCamera(46,1,.1,500);
+const raycaster=new T.Raycaster(),mouse=new T.Vector2();
+const sceneState={mode:'campus',inside:'SOE',hover:null,selected:null,labels:true,heat:false,orbit:0,azimuth:.55,elevation:.58,radius:154,pointerDown:null,animation:null,hoverHighlight:null};
+const target=new T.Vector3(0,4,0);
+const campusBuildings={};const pickCampus=[],pinElements={};
+const data={issues:[{id:'CV-001',place:'SOE · Entrance area',type:'Projector fault',priority:'Medium',status:'Assigned',worker:'Electronics team'},{id:'CV-002',place:'CDSIMER',type:'Leaking water tap',priority:'High',status:'In progress',worker:'Plumbing team'}],energy:{SOE:{ac:42,lights:13,fans:9,other:11},'AI Block':{ac:31,lights:10,fans:6,other:8},CDSIMER:{ac:51,lights:17,fans:11,other:13}},staff:['Maintenance · 2 tasks','Cleaning · 1 task','Crowd monitors · 3 alerts reviewed']};
+function elmesh(geo,mat,parent,x=0,y=0,z=0,key=null){const m=new T.Mesh(geo,mat);m.position.set(x,y,z);if(key!==null){m.userData.pick=key;pickCampus.push(m);}parent.add(m);return m;}
+function box(parent,w,h,d,x,y,z,mat,key=null){return elmesh(new T.BoxGeometry(w,h,d),mat,parent,x,y,z,key);}
+function cyl(parent,r1,r2,h,x,y,z,mat,seg=16,key=null){return elmesh(new T.CylinderGeometry(r1,r2,h,seg),mat,parent,x,y,z,key);}
+function torus(parent,r,tube,x,y,z,mat,rz=0){const mesh=elmesh(new T.TorusGeometry(r,tube,9,96),mat,parent,x,y,z);mesh.rotation.x=Math.PI/2; mesh.rotation.z=rz;return mesh;}
+function path(x1,z1,x2,z2,width,material){const dx=x2-x1,dz=z2-z1,dist=Math.hypot(dx,dz);const m=box(campusScene,width,.10,dist,(x1+x2)/2,.18,(z1+z2)/2,material);m.rotation.y=Math.atan2(dx,dz);return m;}
+function radialGlowTexture(){const cv=document.createElement('canvas');cv.width=cv.height=128;const ctx=cv.getContext('2d'),g=ctx.createRadialGradient(64,64,2,64,64,62);g.addColorStop(0,'rgba(180,236,255,.95)');g.addColorStop(.18,'rgba(50,191,255,.55)');g.addColorStop(1,'rgba(24,90,250,0)');ctx.fillStyle=g;ctx.fillRect(0,0,128,128);return new T.CanvasTexture(cv);}const glTex=radialGlowTexture();
+function glow(parent,x,y,z,scale=4){const s=new T.Sprite(new T.SpriteMaterial({map:glTex,color:0x8adeff,transparent:true,depthWrite:false,blending:T.AdditiveBlending}));s.position.set(x,y,z);s.scale.set(scale,scale,scale);parent.add(s);return s;}
+function setupLights(scene){scene.add(new T.HemisphereLight(0xaccffd,0x8c6850,2.1));const sun=new T.DirectionalLight(0xffc6a0,2.2);sun.position.set(-70,100,-55);scene.add(sun);const fill=new T.DirectionalLight(0x4f9be2,1.4);fill.position.set(70,54,70);scene.add(fill);}
+setupLights(campusScene);
+// Sky-coloured ground, ring road and restrained landscaping.
+box(campusScene,230,.7,220,0,-.4,0,makeMat(0x4a535a));
+const ground=new T.Mesh(new T.PlaneGeometry(230,220),makeMat(0x484f50));ground.rotation.x=-Math.PI/2;ground.position.y=-.018;campusScene.add(ground);
+function circle(radius,mat,y=.08,segments=100){const m=new T.Mesh(new T.CircleGeometry(radius,segments),mat);m.rotation.x=-Math.PI/2;m.position.y=y;campusScene.add(m);return m;}
+function annulus(inner,outer,mat,y=.1){const m=new T.Mesh(new T.RingGeometry(inner,outer,120),mat);m.rotation.x=-Math.PI/2;m.position.y=y;campusScene.add(m);return m;}
+annulus(27,37,matRoad,.06);circle(26.7,matPave,.07);annulus(21,21.3,makeMat(0x9c948c),.13);annulus(35.1,35.3,makeMat(0xc8ad82),.15);
+for(let i=0;i<32;i++){const a=i*2*Math.PI/32;const dash=box(campusScene,.22,.02,1.35,31*Math.sin(a),.15,31*Math.cos(a),makeMat(0xb9b39e));dash.rotation.y=a;}
+for(const angle of [-2.6,-1.1,.5,1.8]){path(29*Math.sin(angle),29*Math.cos(angle),91*Math.sin(angle),91*Math.cos(angle),8,matRoad);}
+// Central circular plaza / architectural light monument.
+const plaza=cyl(campusScene,13.8,13.8,.5,0,.37,0,makeMat(0x9f9a94),72);cyl(campusScene,9.4,9.4,.55,0,.73,0,matWater,72);cyl(campusScene,4.5,4.5,.45,0,1.05,0,matStone2,48);cyl(campusScene,1.4,1.7,11,0,7.2,0,makeMat(0xe8d1bd),10);glow(campusScene,0,14,0,9);
+for(let i=0;i<4;i++){const a=i*Math.PI/2;cyl(campusScene,.32,.32,9,3.5*Math.cos(a),5.5,3.5*Math.sin(a),matStone2,10);glow(campusScene,3.5*Math.cos(a),10,3.5*Math.sin(a),2.8);}
+function windowsForFacade(group,w,h,d,key){for(let y=3.2;y<h-1.5;y+=3.8){for(let x=-w/2+2.8;x<w/2-1.1;x+=3.6){box(group,1.25,2.0,.15,x,y,d/2+.1,((Math.round(x*10)+Math.round(y*10))%5===0)?matWindowBlue:matWindow,key);box(group,1.25,2.0,.15,x,y,-d/2-.1,matWindow,key);}for(let z=-d/2+2.9;z<d/2-1.5;z+=3.6){box(group,.13,2,1.25,w/2+.1,y,z,matWindowBlue,key);box(group,.13,2,1.25,-w/2-.1,y,z,matWindow,key);}}}
+function gate(group,w,d,key){const front=d/2+.23;box(group,5,6,.42,0,3,front,matDark,key);box(group,6,.8,.7,0,6.55,front,matStone2,key);const arch=new T.Mesh(new T.TorusGeometry(2.5,.42,8,22,Math.PI),matStone2);arch.position.set(0,6,front+.15);group.add(arch);}
+function castleBlock(key,x,z,w,d,h){const group=new T.Group();group.position.set(x,0,z);campusScene.add(group);box(group,w,h,d,0,h/2,0,matStone,key);box(group,w+2,1.35,d+2,0,h+.4,0,matRoof,key);windowsForFacade(group,w,h,d,key);gate(group,w,d,key);for(const sx of [-1,1])for(const sz of [-1,1]){const tx=sx*(w/2-1.2),tz=sz*(d/2-1.2);cyl(group,2.65,2.85,h+3.2,tx,(h+3.2)/2,tz,matStone2,8,key);cyl(group,3.0,3.0,1.6,tx,h+3.7,tz,matRoof,8,key);}for(let x0=-w/2+1.4;x0<w/2;x0+=3.0){box(group,1.6,1.4,1.6,x0,h+1.6,d/2,matStone2,key);box(group,1.6,1.4,1.6,x0,h+1.6,-d/2,matStone2,key);}const entry=box(group,7,.14,6,0,.14,d/2+3.5,makeMat(0x9b938e));entry.userData.pick=key;pickCampus.push(entry);return group;}
+function makeHospital(){const g=castleBlock('Hospital',67,-37,31,20,16);box(g,7,1,.3,0,11,10.25,makeMat(0xaf3c39),'Hospital');box(g,1,6,.4,0,11,10.6,new T.MeshBasicMaterial({color:0xff6858}),'Hospital');return g;}
+const SOE=castleBlock('SOE',-51,38,31,22,18);
+// SOE entrance visual concept: glass frontage, columns, small black circular markers, red mat.
+// Counts, exact geometry and turnstile throughput are NOT verified by photographs.
+function soeEntranceDetail(group){
+ const doorGlass=new T.MeshStandardMaterial({color:0x82d4e7,metalness:.34,roughness:.12,transparent:true,opacity:.56,side:T.DoubleSide});
+ const trim=makeMat(0xe9e6df,.4,.3),black=makeMat(0x0c1727),red=makeMat(0x9f2e35);
+ box(group,14,.16,3.3,0,.12,15.5,red,'SOE');
+ for(const x of [-6.2,6.2])cyl(group,.44,.44,7.2,x,3.6,13.65,trim,14,'SOE');
+ box(group,15.6,.66,3.5,0,7.2,13.7,trim,'SOE');
+ for(let i=0;i<5;i++){
+   const x=-5.8+i*2.9;
+   box(group,2.74,5.55,.09,x,2.83,12.45,doorGlass,'SOE');
+   box(group,.12,5.65,.18,x+1.4,2.83,12.51,trim,'SOE');
+   const mark=cyl(group,.16,.16,.12,x,3.07,12.55,black,18,'SOE');mark.rotation.x=Math.PI/2;
+ }
+ for(const x of [-2.1,2.1]){box(group,.14,1,.16,x,2.5,12.61,trim,'SOE');}
+}
+soeEntranceDetail(SOE);
+const AI_BLOCK=castleBlock('AI Block',42,8,30,21,16);const CD=castleBlock('CDSIMER',57,53,29,22,15);const HOSP=makeHospital();
+function makeArena(){const key='DSU Arena',g=new T.Group();g.position.set(-72,0,-51);campusScene.add(g);cyl(g,24,25,1.2,0,.6,0,makeMat(0x666878),64,key);cyl(g,21.5,22,11,0,6.5,0,makeMat(0x486e88,.36,.72),64,key);cyl(g,18.7,18.7,11.4,0,7.0,0,makeMat(0x0e385c,.45,.5),64,key);cyl(g,16.2,16.2,.3,0,2.1,0,new T.MeshBasicMaterial({color:0x275d92}),64,key);cyl(g,13.0,13,.3,0,2.4,0,new T.MeshBasicMaterial({color:0x8a7cac}),64,key);for(let i=0;i<48;i++){const a=i*Math.PI*2/48,x=Math.sin(a)*20,z=Math.cos(a)*20;const col=cyl(g,.22,.22,9,x,6.5,z,makeMat(0xb8dfff,.3,.6),6,key);col.rotation.z=.035;glow(g,x,11,z,2.5);}torus(g,22,1.1,0,12.5,0,new T.MeshBasicMaterial({color:0x4bd8ff}));torus(g,19.5,.8,0,13.4,0,makeMat(0xccdbef,.25,.65));glow(g,0,15,0,16);return g;}
+function makeCricket(){const key='Cricket Ground',g=new T.Group();g.position.set(2,0,-66);campusScene.add(g);cyl(g,26,26,.8,0,.41,0,matRoof,72,key);cyl(g,23.9,23.9,.18,0,.86,0,makeMat(0x467552),72,key);for(let j=0;j<3;j++)torus(g,24.4+j*.62,.19,0,1.25+j*.13,0,makeMat(0xb5c4ce));box(g,3,.08,12,0,1.01,0,makeMat(0xc0b18b),key);for(const side of [-1,1])for(const z of [-8,8]){cyl(g,.29,.35,12,side*23,6.5,z,makeMat(0xbdc4cf),6,key);glow(g,side*23,13,z,5);}return g;}
+const ARENA=makeArena(),CRICKET=makeCricket();
+for(const [k,g,pinY] of [['SOE',SOE,24],['AI Block',AI_BLOCK,22],['CDSIMER',CD,21],['Hospital',HOSP,23],['DSU Arena',ARENA,23],['Cricket Ground',CRICKET,8]]){campusBuildings[k]={group:g,pin:pinY};}
+// Tiny streetlamps, cars, limited trees, parking lots.
+function streetlamp(x,z){cyl(campusScene,.16,.18,5.5,x,2.8,z,makeMat(0x333d56),6);glow(campusScene,x,5.7,z,3.1);}
+for(let i=0;i<30;i++){const a=i*2*Math.PI/30;streetlamp(Math.sin(a)*39,Math.cos(a)*39);}
+function tree(x,z){cyl(campusScene,.26,.35,2.7,x,1.35,z,makeMat(0x5a4536),7);cyl(campusScene,2.1,1.0,4.8,x,5.0,z,makeMat(0x36544a),7);}
+for(let i=0;i<30;i++){const a=i*2*Math.PI/30,r=45+(i%4)*9,x=Math.sin(a)*r,z=Math.cos(a)*r;if(Math.abs(x)>23&&Math.abs(z)>22&&Math.abs(x)<97&&Math.abs(z)<98)tree(x,z);}
+function parking(x,z){const g=new T.Group();g.position.set(x,0,z);campusScene.add(g);box(g,34,.07,19,0,.13,0,matRoad,'Parking');for(let i=-4;i<=4;i++){box(g,.12,.02,16,i*3.45,.19,0,makeMat(0xe8dfc7));if(i<4&&i%2===0){const car=box(g,2.1,.8,3.8,i*3.45+1.6,.68,0,makeMat(i%4===0?0xdddfe6:0x647fa4));box(g,1.5,.6,1.6,i*3.45+1.6,1.3,-.1,matWindowBlue);}}}
+parking(-74,22);parking(84,21);parking(75,82);
+
+// These are additional genuine click targets to match the original app's locations.
+// They are illustrative facilities, not surveyed DSU geometry.
+const sportsGroup=new T.Group();sportsGroup.position.set(72,0,-79);campusScene.add(sportsGroup);
+box(sportsGroup,35,.35,26,0,.22,0,makeMat(0x486850),'Sports Facilities');
+for(let i=0;i<2;i++){
+ box(sportsGroup,13,.04,18,-9+i*18,.47,0,makeMat(0x3b8874),'Sports Facilities');
+ box(sportsGroup,.18,.06,18,-15.5+i*18,.53,0,makeMat(0xf4edda),'Sports Facilities');
+ box(sportsGroup,.18,.06,18,-2.5+i*18,.53,0,makeMat(0xf4edda),'Sports Facilities');
+}
+const audGroup=new T.Group();audGroup.position.set(-7,0,83);campusScene.add(audGroup);
+cyl(audGroup,13,13,.6,0,.3,0,makeMat(0x9f9787),42,'Open Auditorium');
+for(let i=0;i<5;i++){
+  const step=cyl(audGroup,11-i*1.4,11-i*1.4,.32,0,.85+i*.45,0,makeMat(i%2===0?0xb5a48d:0x8b8078),42,'Open Auditorium');
+}
+box(audGroup,11,.25,5,0,3.65,-2.5,makeMat(0x3f495d),'Open Auditorium');
+const parkingMarker=new T.Group();parkingMarker.position.set(-74,0,22);campusScene.add(parkingMarker);
+box(parkingMarker,25,.08,14,0,.25,0,makeMat(0x53677c),'Parking');
+campusBuildings['Sports Facilities']={group:sportsGroup,pin:10};
+campusBuildings['Open Auditorium']={group:audGroup,pin:8};
+campusBuildings['Parking']={group:parkingMarker,pin:9};
+
+// Site labels are real buttons, but clicking the actual 3D mesh also works.
+for(const name of Object.keys(campusBuildings)){const b=document.createElement('button');b.className='pin';b.innerHTML='<b>◈</b> '+name;b.addEventListener('click',e=>{e.stopPropagation();enterBuilding(name);});labelsEl.appendChild(b);pinElements[name]=b;}
+function setCamOrbit(){const centre=target;const r=sceneState.radius;const el=sceneState.elevation,az=sceneState.azimuth;camera.position.set(centre.x+r*Math.sin(az)*Math.cos(el),centre.y+r*Math.sin(el),centre.z+r*Math.cos(az)*Math.cos(el));camera.lookAt(centre);}
+function initialCamera(){sceneState.azimuth=.42;sceneState.elevation=.72;sceneState.radius=154;target.set(0,3,0);setCamOrbit();}initialCamera();
+function labelsUpdate(){const visible=sceneState.mode==='campus'&&sceneState.labels;for(const [name,meta] of Object.entries(campusBuildings)){const p=pinElements[name];if(!visible){p.style.display='none';continue;}const v=meta.group.position.clone().add(new T.Vector3(0,meta.pin,0)).project(camera);if(v.z<-1||v.z>1){p.style.display='none';continue;}p.style.display='block';p.style.left=((v.x+1)*.5*window.innerWidth)+'px';p.style.top=((-v.y+1)*.5*window.innerHeight)+'px';}}
+function resize(){const w=$('app').clientWidth,h=$('app').clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}window.addEventListener('resize',resize);resize();
+function showToast(s){$('toast').textContent=s;$('toast').classList.add('show');clearTimeout(showToast.timer);showToast.timer=setTimeout(()=>$('toast').classList.remove('show'),2600);}
+function endPanel(){
+ $('panel').classList.remove('open');
+ if(sceneState.mode==='focused')locationView.classList.add('open');
+ document.querySelectorAll('.navbtn').forEach(b=>b.classList.toggle('active',b.dataset.panel==='campus'));
+}
+function htmlSafe(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function issueRows(key){return data.issues.filter(i=>!key||i.place===key||i.place.startsWith(key+' ·'));}
+const parkingData={
+ 'SOE':{free:16,total:42,zone:'SOE approach'},'AI Block':{free:8,total:30,zone:'AI Block lot'},
+ 'CDSIMER':{free:11,total:28,zone:'CDSIMER approach'},'Hospital':{free:14,total:40,zone:'Hospital visitors'},
+ 'Cricket Ground':{free:27,total:70,zone:'Cricket event lot'},'DSU Arena':{free:24,total:85,zone:'Arena event parking'}
+};
+const facilityEnergy={
+ 'SOE':{lighting:13,cooling:42,equipment:20},'AI Block':{lighting:10,cooling:31,equipment:14},
+ 'CDSIMER':{lighting:17,cooling:51,equipment:24},'Hospital':{lighting:25,cooling:57,equipment:26},
+ 'Cricket Ground':{lighting:20,cooling:0,equipment:6},'DSU Arena':{lighting:29,cooling:16,equipment:16}
+};
+const facilityWaste={'SOE':86,'AI Block':56,'CDSIMER':32,'Hospital':65,'Cricket Ground':71,'DSU Arena':43};
+
+// SYNTHETIC DEMO DATA ONLY. Values are inserted by app.py from data/synthetic_classroom_energy.csv.
+// No external chart libraries or additional Python dependencies.
+const energyDemoRows=/*__ENERGY_DEMO_DATA__*/[];
+const ENERGY_COLORS={red:'#f46b79',green:'#45d5a9',gray:'#9aaac2'};
+function classifyEnergyInterval(row){
+ const n=row.occupancy;
+ const fan=row.fan_status,light=row.light_status;
+ if(n===null||n===undefined||!Number.isFinite(n)|| !['On','Off'].includes(fan)||!['On','Off'].includes(light))return 'gray';
+ if(n===0&&(fan==='On'||light==='On'))return 'red';
+ if((n>0&&row.electricity_consumption_kwh>0)||(n===0&&fan==='Off'&&light==='Off'))return 'green';
+ return 'gray'; // No claim if an interval does not match the defined categories.
+}
+function formatEnergy(value,digits=2){return value===null||value===undefined?'—':Number(value).toFixed(digits);}
+function energySelectorFor(key){
+ if(key&&!['SOE','AI Block','CDSIMER'].includes(key))return '';
+ const relevant=energyDemoRows.filter(r=>!key||r.building===key);
+ if(!relevant.length)return '';
+ const roomOptions=[...new Map(relevant.map(r=>[r.building+'|'+r.room,r])).values()];
+ const items=roomOptions.map(r=>`<option value="${htmlSafe(r.building+'|'+r.room)}">${htmlSafe(r.building)} · ${htmlSafe(r.room_type)} ${htmlSafe(r.room)}</option>`).join('');
+ return `<div class="section" id="syntheticEnergySection"><h3>Classroom energy vs. occupancy</h3>
+ <p class="energyNote"><strong>SYNTHETIC / DEMO DATA</strong> · Time-interval electricity use and fan/light flags. Red only means unoccupied with fans or lights on; this is a possible-wastage alert, not confirmed actual wastage.</p>
+ <label>Choose a classroom or AC lecture hall<select class="input" id="energyRoomSelect">${items}</select></label>
+ <div class="energyLegend"><span><i class="energyDot" style="background:${ENERGY_COLORS.red}"></i>Red · possible wastage</span><span><i class="energyDot" style="background:${ENERGY_COLORS.green}"></i>Green · normal use</span><span><i class="energyDot" style="background:${ENERGY_COLORS.gray}"></i>Gray · unknown / incomplete</span></div>
+ <div class="energyChartWrap" id="energyChart" role="img" aria-label="Simulated classroom electricity consumption by interval, color-coded by occupancy and equipment status"></div>
+ <div id="energyReadingTable"></div>
+ <p class="energyNote">AC kWh per person-hour = AC energy (kWh) ÷ (occupancy × duration in hours). Blank (—) when occupancy is zero or unavailable. Graph colors use the fan/light rule, not AC status. Demo readings are independent samples and are not reconciled with the building totals above.</p></div>`;
+}
+function renderEnergyGraph(){
+ const select=$('energyRoomSelect');if(!select)return;
+ const readings=energyDemoRows.filter(r=>r.building+'|'+r.room===select.value).sort((a,b)=>a.timestamp.localeCompare(b.timestamp));
+ const W=430,H=214,left=37,right=12,top=15,bottom=45;
+ const baseY=H-bottom,plotH=baseY-top;
+ const max=Math.max(1,...readings.map(r=>r.electricity_consumption_kwh));
+ const ceil=Math.ceil(max/5)*5;
+ let contents=`<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Synthetic energy readings for ${htmlSafe(select.value)}. Each bar is one time interval.">`;
+ for(let step=0;step<=4;step++){
+  const val=ceil*step/4,y=baseY-plotH*step/4;
+  contents+=`<line x1="${left}" y1="${y}" x2="${W-right}" y2="${y}" stroke="#355472" stroke-width=".8"/><text x="${left-5}" y="${y+3}" text-anchor="end" fill="#b3cade" font-size="9">${val.toFixed(1)}</text>`;
+ }
+ const slot=(W-left-right)/readings.length,barWidth=Math.min(32,slot*.57);
+ readings.forEach((r,i)=>{
+  const color=ENERGY_COLORS[classifyEnergyInterval(r)],v=r.electricity_consumption_kwh;
+  const height= v/ceil*plotH,x=left+i*slot+(slot-barWidth)/2,y=baseY-height;
+  const title=`${r.building} ${r.room} · ${r.timestamp} · ${v} kWh · Occupancy ${r.occupancy===null?'Unknown':r.occupancy} · Fans ${r.fan_status||'Unknown'} · Lights ${r.light_status||'Unknown'}`;
+  // Thin baseline makes zero-usage intervals visible without inventing consumption.
+  contents+=`<rect x="${x}" y="${v===0?baseY-2:y}" width="${barWidth}" height="${v===0?2:height}" fill="${color}" rx="2"><title>${htmlSafe(title)}</title></rect>`;
+  contents+=`<text x="${x+barWidth/2}" y="${baseY+14}" text-anchor="middle" fill="#c3dbef" font-size="9">${htmlSafe(r.timestamp.slice(11,16))}</text>`;
+ });
+ contents+=`<text x="${W/2}" y="${H-5}" text-anchor="middle" fill="#92bcd8" font-size="9">Time interval (15 Oct 2026) · electricity in kWh</text></svg>`;
+ $('energyChart').innerHTML=contents;
+ const rows=readings.map(r=>{
+  const code=classifyEnergyInterval(r),label=code==='red'?'Possible wastage':code==='green'?'Normal':'Unknown';
+  return `<tr><td>${htmlSafe(r.timestamp.slice(11,16))}</td><td>${formatEnergy(r.duration_hours,1)} h</td><td>${r.occupancy===null?'—':r.occupancy}</td><td>${r.fan_status||'—'}</td><td>${r.light_status||'—'}</td><td>${formatEnergy(r.ac_energy_kwh)}</td><td>${formatEnergy(r.electricity_consumption_kwh)}</td><td>${formatEnergy(r.energy_per_person_hour_kwh,4)}</td><td class="energyStatus" style="color:${ENERGY_COLORS[code]}">${label}</td></tr>`;
+ }).join('');
+ $('energyReadingTable').innerHTML=`<div class="energyTableWrap"><table class="energyTable"><thead><tr><th>Time</th><th>Duration</th><th>People</th><th>Fans</th><th>Lights</th><th>AC kWh</th><th>Total kWh</th><th>AC kWh/person-h</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+
+const crowdScenario={
+ 'SOE':{label:'Glass entrance + interior checkpoint',present:74,threshold:90,staff:'Entrance steward',unit:'arrival queue'},
+ 'AI Block':{label:'Shared academic entrance',present:48,threshold:75,staff:'Academic entrance monitor',unit:'arrival queue'},
+ 'CDSIMER':{label:'Academic access zone',present:62,threshold:95,staff:'Access coordinator',unit:'arrival queue'},
+ 'Hospital':{label:'Public reception approach',present:39,threshold:65,staff:'Public-area coordinator',unit:'public entry queue'},
+ 'Cricket Ground':{label:'Spectator entry / match-day approach',present:186,threshold:260,staff:'Sports event steward',unit:'arriving spectators'},
+ 'DSU Arena':{label:'Event arrival / arena frontage',present:115,threshold:180,staff:'Arena coordinator',unit:'event arrivals'}
+};
+const staffResponses={};
+function chip(text){return '<div class="loc-panel-chip">'+htmlSafe(text)+'</div>';}
+function showPanel(which){
+ document.querySelectorAll('.navbtn').forEach(b=>b.classList.toggle('active',b.dataset.panel===which));
+ if(which==='campus'){backToCampus();return;}
+ const key=sceneState.selected,info=key?facilityInfo[key]:null;
+ const place=key||'Campus-wide';
+ locationView.classList.remove('open');
+ const el=$('panelBody');let markup='';
+ const sub=chip('📍 '+place+' · Demonstration data only');
+ if(which==='crowd'){
+   const profile=key?crowdScenario[key]:{label:'Illustrative shared entries at campus facilities',present:74,threshold:90,staff:'Campus monitors',unit:'queued arrivals'};
+   const response=staffResponses[key||'campus']||'Not acknowledged';
+   markup=`<h2>👥 Crowd Command</h2>${sub}<p>${key?htmlSafe(info.crowd):'Simulated entrance-congestion monitoring across campus zones; choose a 3D location to view its own crowd data.'}</p>
+   <div class="section"><h3>${htmlSafe(profile.label)}</h3>
+   <div class="item"><span>Demo ${htmlSafe(profile.unit)}</span><strong>${profile.present}</strong></div>
+   <div class="item"><span>Scenario threshold (not measured capacity)</span><strong>${profile.threshold}</strong></div>
+   <div class="item"><span>Illustrative congestion</span><b class="warn" id="queueRisk">${profile.present>=profile.threshold?'High':'Moderate'}</b></div>
+   <label>What-if incoming count <strong id="arrivalsVal">${profile.present}</strong><input type="range" class="input" id="arrivalSlider" min="0" max="${profile.threshold*2}" value="${profile.present}"></label>
+   <div id="scenarioResult" class="simulationResult">Model only: adjust arrivals to explore changing queue pressure.</div></div>
+   <div class="section"><h3>Sector-based arrival staging · example</h3><p>Demonstrate staff coordination, queued groups and staggered entry at this location's normally used access point. No invented evacuation routes or separate exits.</p><button class="action" id="crowdScenario">Run staged-flow simulation</button></div>
+   <div class="section"><h3>Staff response · simulated</h3><div class="item"><span>${htmlSafe(profile.staff)}</span><b id="staffState" class="pill">${htmlSafe(response)}</b></div><button class="smallbtn" id="ackStaff">Acknowledge alert</button> <button class="smallbtn" id="staffArrive">Mark staff on location</button><p>These are simulated staff actions; no real alerts are sent.</p></div>`;
+ }
+ if(which==='control'){
+   const keys=key?[key]:Object.keys(facilityEnergy);
+   const readings=keys.map(k=>{const v=facilityEnergy[k],total=v.lighting+v.cooling+v.equipment;return `<div class="section"><h3>${htmlSafe(k)}</h3><div class="item"><span>Lighting</span><b>${v.lighting} kWh</b></div><div class="item"><span>Cooling / HVAC</span><b>${v.cooling} kWh</b></div><div class="item"><span>Equipment</span><b>${v.equipment} kWh</b></div><div class="item"><span>Combined example</span><b>${total} kWh</b></div><div class="item"><span>Waste-bin fill example</span><b>${facilityWaste[k]}%</b></div></div>`;}).join('');
+   markup=`<h2>⚡ Campus Control</h2>${sub}<p>${key?htmlSafe(info.control):'Electricity, waste and facility maintenance. Select any 3D location for specific readings.'}</p>
+   <div class="section"><h3>Electricity + waste management</h3><p>All figures are invented example measurements, not connected to real meters.</p></div>${readings}
+   ${energySelectorFor(key)}
+   <div class="section"><h3>Campus Maintenance & Management</h3><p>Water leaks, taps, projectors, electrical faults and other student-reported facility issues.</p><div id="triageQueue"></div>${key?'<button class="smallbtn" id="showAllTickets">Manage all campus tickets</button>':''}<p>Changes are only kept in this browser session. No login, real staff assignment or alerts.</p></div>`;
+ }
+ if(which==='connect'){
+   const zone=key?parkingData[key]:null;
+   const parking=zone?`<div class="item"><span>${htmlSafe(zone.zone)}</span><b>${zone.free} free / ${zone.total} demo spaces</b></div>`:Object.entries(parkingData).map(([k,v])=>`<div class="item"><span>${htmlSafe(k)}</span><b>${v.free} / ${v.total} free</b></div>`).join('');
+   const opts=Object.keys(campusBuildings).map(k=>`<option value="${htmlSafe(k)}"${k===key?' selected':''}>${htmlSafe(k)}</option>`).join('');
+   markup=`<h2>📍 Campus Connect</h2>${sub}<p>${key?htmlSafe(info.connect):'Student and faculty campus services, with simulated parking and reporting.'}</p>
+   <div class="section"><h3>Parking analysis</h3>${parking}<p>Availability is simulated, not a live parking feed.</p></div>
+   <div class="section"><h3>Report an Issue</h3><label>Reported location<select class="input" id="issueLocation">${opts}</select></label>
+   <label>Fault type<select class="input" id="issueType"><option>Faulty projector</option><option>Water leak / faulty tap</option><option>Electrical fault</option><option>Damaged seating / sports equipment</option><option>Cleaning / waste problem</option><option>Other facility maintenance</option></select></label>
+   <label>Description<textarea class="input" id="issueDetail" rows="3" placeholder="Describe the actual faulty equipment or place"></textarea></label>
+   <button id="issueSubmit" class="action">Submit simulated report</button><p id="reportResult" role="status"></p>
+   <p>Submitting creates a demo maintenance ticket that appears in Campus Control until you reload the page.</p></div>`;
+ }
+ if(which==='brain'){
+   const base=key?crowdScenario[key].present:74;
+   const rec=key?info.brain:'Review access congestion, utility usage, parking availability and maintenance priority across the campus.';
+   markup=`<h2>✦ Campus Brain</h2>${sub}<p>Rule-based what-if insights. No Gemini connection or live campus sensors yet.</p>
+   <div class="section"><h3>${htmlSafe(place)} · Scenario</h3><p>${htmlSafe(rec)}</p>
+   <label>What-if estimated arrivals <strong id="brainVal">${base}</strong><input class="input" type="range" id="brainSlider" min="0" max="${Math.max(300,base*3)}" value="${base}"></label>
+   <div class="simulationResult" id="brainResult">Illustrative baseline: ${base} people.</div></div>
+   <div class="section"><h3>Recommended actions · simulated</h3><p>${key?htmlSafe(info.brain):'Prioritize critical water leaks, monitor arrival peaks and review high electricity use in unused spaces.'}</p></div>`;
+ }
+ if(!markup){showToast('This module is not available.');return;}
+ el.innerHTML=markup;
+ $('panel').classList.add('open');
+ if(which==='crowd'){
+   const profile=key?crowdScenario[key]:{present:74,threshold:90};
+   const refresh=()=>{const n=Number($('arrivalSlider').value);$('arrivalsVal').textContent=n;const risk=n>=profile.threshold?'High':n>=profile.threshold*.65?'Moderate':'Low';$('queueRisk').textContent=risk;
+    $('scenarioResult').textContent='Scenario: '+n+' arrivals · '+risk.toLowerCase()+' modeled queue pressure. This threshold is illustrative and not a verified entrance capacity.';};
+   $('arrivalSlider').oninput=refresh;
+   $('crowdScenario').onclick=()=>showToast('Demonstration only: simulated grouped arrival scheduling. Not evacuation guidance.');
+   for(const [id,status] of [['ackStaff','Acknowledged'],['staffArrive','On location']]){$(id).onclick=()=>{staffResponses[key||'campus']=status;$('staffState').textContent=status;showToast('Demo staff response saved in this browser session.');};}
+ }
+ if(which==='control'){
+   if($('energyRoomSelect')){$('energyRoomSelect').onchange=renderEnergyGraph;renderEnergyGraph();}
+   const queue=$('triageQueue');
+   function renderQueue(all=false){
+     const issues=issueRows(all?null:key);
+     queue.innerHTML=(issues.length?issues.map(i=>{const j=data.issues.indexOf(i);return `<div class="section"><strong>${htmlSafe(i.id)} · ${htmlSafe(i.type)}</strong><p>${htmlSafe(i.place)}${i.details?' · '+htmlSafe(i.details):''}</p>
+      <label>Priority<select class="input" data-priority="${j}">${['Low','Medium','High','Critical'].map(v=>`<option${i.priority===v?' selected':''}>${v}</option>`).join('')}</select></label>
+      <label>Status<select class="input" data-status="${j}">${['New','Assigned','In progress','Resolved','Verified'].map(v=>`<option${i.status===v?' selected':''}>${v}</option>`).join('')}</select></label>
+      <label>Assignee<select class="input" data-worker="${j}">${['Unassigned','Facilities team','Electrical team','Plumbing team','Cleaning team','Electronics team','Sports facilities team'].map(v=>`<option${i.worker===v?' selected':''}>${v}</option>`).join('')}</select></label>
+      <label>Target date<input type="date" class="input" data-deadline="${j}" value="${htmlSafe(i.deadline||'')}"></label></div>`}).join(''):'<p>No tickets for this location in the demo queue.</p>');
+     for(const i of issues){const j=data.issues.indexOf(i);for(const prop of ['priority','status','worker','deadline']){const input=queue.querySelector('[data-'+prop+'="'+j+'"]');if(input)input.onchange=()=>{i[prop]=input.value;showToast(i.id+' updated (simulated).');};}}
+   }
+   renderQueue();
+   if(key)$('showAllTickets').onclick=()=>renderQueue(true);
+ }
+ if(which==='connect'){
+   $('issueSubmit').onclick=()=>{const place=$('issueLocation').value,type=$('issueType').value,details=$('issueDetail').value.trim();
+    if(!details){$('reportResult').textContent='Please describe the issue first.';return;}
+    const id='CV-'+String(data.issues.length+1).padStart(3,'0');
+    data.issues.push({id,place,type,details,priority:type.includes('Water')||type.includes('Electrical')?'High':'Medium',status:'New',worker:'Unassigned'});
+    $('reportResult').textContent=id+' added to the simulated maintenance queue. Open Campus Control to triage it.';
+    $('issueDetail').value='';showToast('Demo report submitted — no real staff notified.');
+   };
+ }
+ if(which==='brain'){
+  $('brainSlider').oninput=()=>{const n=Number($('brainSlider').value),p=key?crowdScenario[key]:{threshold:90};$('brainVal').textContent=n;
+  $('brainResult').textContent=n>p.threshold?'Simulated demand exceeds the chosen demo threshold: consider staggered arrivals and staff checks.':'Simulated demand is below the example threshold. Continue checking localized bottlenecks and utilities.';};
+ }
+}
+function makeOutline(group,color=0x4fdcff){if(sceneState.hoverHighlight){campusScene.remove(sceneState.hoverHighlight);sceneState.hoverHighlight.geometry.dispose();sceneState.hoverHighlight.material.dispose();sceneState.hoverHighlight=null;}if(!group)return;const bounds=new T.Box3().setFromObject(group);const helper=new T.Box3Helper(bounds,color);campusScene.add(helper);sceneState.hoverHighlight=helper;}
+function changeHover(k){if(sceneState.hover===k)return;sceneState.hover=k;makeOutline(k?campusBuildings[k]?.group:null,k===sceneState.selected?0xffa250:0x48e0ff);canvas.style.cursor=k?'pointer':'grab';for(const [name,node]of Object.entries(pinElements))node.classList.toggle('selected',name===k);}
+const facilityInfo={
+ 'SOE':{kind:'School of Engineering',icon:'🏰',description:'Glass entrance and inner lobby checkpoint · concept reconstruction.',people:'Queue risk: elevated',energy:'75 kWh',crowd:'Monitor the shared glass-door entrance and inside checkpoint. Model sector-based staged releases and a steward response; flow is simulated, not evacuation routing.',control:'Electricity, classroom-equipment reports, tap leaks, waste pickup and staff assignments for SOE.',connect:'Report a faulty projector, leaking tap or other SOE facility issue; check nearby parking.',brain:'What if the arrival rate at SOE increases? Test staged entry and maintenance priorities.'},
+ 'AI Block':{kind:'Academic block',icon:'🤖',description:'AI Block · DSU-inspired external facade; internal layout not asserted.',people:'Demand: moderate',energy:'55 kWh',crowd:'Review simulated corridor and shared-entrance congestion for AI Block; do not infer emergency exits.',control:'Monitor illustrated electricity, waste and equipment issues for AI Block.',connect:'Submit equipment faults and view simulated parking near AI Block.',brain:'Analyze simulated peak class-change traffic and unoccupied-room electricity use.'},
+ 'CDSIMER':{kind:'Campus medical education block',icon:'🏥',description:'CDSIMER academic and clinical campus zone.',people:'Demand: moderate',energy:'92 kWh',crowd:'Simulate access queues and crowd accumulation around the CDSIMER block.',control:'Track water leaks, electrical load, waste, and maintenance requests for CDSIMER.',connect:'Report facility faults and access campus services around CDSIMER.',brain:'Explore water-leak response and energy optimization scenarios.'},
+ 'Hospital':{kind:'Hospital zone',icon:'➕',description:'Hospital-facing facilities; no live clinical information.',people:'Access: active',energy:'108 kWh',crowd:'Simulate public-entry queues without claiming patient movement, emergency exits or capacity.',control:'Illustrative hospital-facility power, maintenance and waste signals (not medical safety guidance).',connect:'Hospital-area parking and public facility issue reporting.',brain:'Test scenarios for queue growth and infrastructure faults; not clinical recommendations.'},
+ 'Cricket Ground':{kind:'Sports field',icon:'🏏',description:'Cricket facilities and spectator entry · sports dashboard, no classrooms.',people:'Visitors: 186',energy:'26 kWh',crowd:'Model spectator arrival, entrance queue and field-side congestion only. No fabricated classroom floors.',control:'Track floodlight energy, turf water-use concerns, waste-bin servicing and field maintenance.',connect:'Check simulated event parking, report damaged seating, fixtures or water leaks.',brain:'What if attendance rises before a match? Estimate staffing, queue stress and waste pickup demand.'},
+ 'DSU Arena':{kind:'Events and sports arena',icon:'🏟️',description:'DSU Arena in the upper-left campus zone.',people:'Event demand: low',energy:'61 kWh',crowd:'Model event entry and phased dispersal through verified entry routes only; no unverified emergency egress.',control:'Event lighting, equipment faults, waste collections, and venue maintenance tasks.',connect:'Simulated arena parking and visitor facility reports.',brain:'What if an event fills the arena? Explore non-emergency arrival and staff-assignment scenarios.'}
+};
+function entranceGraphic(){return `<div class="entranceGraphic" role="img" aria-label="Illustrative SOE entrance with portico, glass doors and red threshold mat">
+<svg viewBox="0 0 440 150" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="eg" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#6cb5d5"/><stop offset="1" stop-color="#162b4a"/></linearGradient></defs><rect width="440" height="150" fill="#17314d"/><rect y="113" width="440" height="37" fill="#6c727c"/><rect x="82" y="23" width="276" height="98" fill="#e9e4dd"/><rect x="119" y="42" width="203" height="76" fill="url(#eg)" stroke="#d8edee" stroke-width="4"/><g stroke="#c5dbe5" stroke-width="3"><path d="M160 42V118M200 42V118M240 42V118M280 42V118"/></g><g fill="#1c2b36"><circle cx="140" cy="85" r="4"/><circle cx="180" cy="85" r="4"/><circle cx="220" cy="85" r="4"/><circle cx="260" cy="85" r="4"/><circle cx="300" cy="85" r="4"/></g><rect x="67" y="17" width="306" height="13" fill="#f0f0e7"/><rect x="69" y="24" width="13" height="106" fill="#f0f0eb"/><rect x="358" y="24" width="13" height="106" fill="#f0f0eb"/><rect x="148" y="121" width="145" height="12" fill="#b33743"/><rect x="183" y="98" width="17" height="13" fill="#2c84c8"/><rect x="240" y="98" width="17" height="13" fill="#2c84c8"/></svg>
+<div class="picLabel">SOE entrance concept · glass doors, inner checkpoint (unverified layout)</div></div>`;}
+function updateLocation(key){
+ const f=facilityInfo[key];if(!f)return;
+ const activeIssues=issueRows(key).length;
+ $('locationBody').innerHTML=`<h2>${f.icon} ${key==='SOE'?'School of Engineering':key}</h2><span class="locBadge">${f.kind} · interactive 3D selection</span>
+ ${key==='SOE'?entranceGraphic():''}<p>${f.description}</p>
+ <div class="locstats"><div class="locstat"><span>Illustrative monitoring</span><strong style="font-size:14px">${f.people}</strong></div><div class="locstat"><span>Example energy</span><strong>${f.energy}</strong></div><div class="locstat"><span>Maintenance tickets</span><strong>${activeIssues}</strong></div><div class="locstat"><span>Data source</span><strong style="font-size:14px;color:#9be3ff">SIMULATED</strong></div></div>
+ <div class="modulelabel">Open ${key} smart services</div><div class="moduleGrid">
+ <button class="modulecard" data-action="crowd"><span class="mi">👥</span><strong>Crowd Command</strong><small>${key==='Cricket Ground'?'Match-day arrivals':'Flow, sectors and staff'}</small></button>
+ <button class="modulecard" data-action="control"><span class="mi">⚡</span><strong>Campus Control</strong><small>Energy, waste, maintenance</small></button>
+ <button class="modulecard" data-action="connect"><span class="mi">📍</span><strong>Campus Connect</strong><small>Parking & report an issue</small></button>
+ <button class="modulecard" data-action="brain"><span class="mi">✦</span><strong>Campus Brain</strong><small>What-if recommendations</small></button>
+ </div><div class="locFoot"><p>Exterior close-up and location-specific services. No invented floor plans.</p><button class="action" id="locBack">← Return to entire 3D campus</button></div>`;
+ document.querySelectorAll('#locationBody [data-action]').forEach(b=>b.onclick=()=>showPanel(b.dataset.action));
+ $('locBack').onclick=backToCampus;
+}
+function enterBuilding(key){if(sceneState.animation)return;if(sceneState.mode!=='campus'){backToCampus();}beginFly(key);}
+function beginFly(key){if(!campusBuildings[key])return;
+ sceneState.selected=key;sceneState.inside=key;changeHover(key);sceneState.mode='fly';
+ locationView.classList.remove('open');$('panel').classList.remove('open');
+ const start={pos:camera.position.clone(),look:target.clone()};
+ const place=campusBuildings[key].group.position.clone();
+ const sport=key==='Cricket Ground'||key==='DSU Arena';
+ const dist=sport?66:43, height=sport?41:23;
+ const dest=place.clone().add(new T.Vector3(dist*.27,height,dist));
+ const look=place.clone().add(new T.Vector3(0,sport?2:8,0));
+ sceneState.animation={start:performance.now(),ms:680,from:start,to:{pos:dest,look},done:()=>{
+   sceneState.mode='focused';target.copy(look);sceneState.azimuth=Math.atan2(dest.x-look.x,dest.z-look.z);
+   sceneState.elevation=Math.asin((dest.y-look.y)/dest.distanceTo(look));sceneState.radius=dest.distanceTo(look);
+   window.cvSelect(key); // Open the ORIGINAL Streamlit building menu.
+ }};
+}
+function backToCampus(){sceneState.animation=null;sceneState.mode='campus';sceneState.hover=null;sceneState.selected=null;
+ sceneState.azimuth=.42;sceneState.elevation=.72;sceneState.radius=154;target.set(0,3,0);setCamOrbit();
+ makeOutline(null);context.classList.remove('open');locationView.classList.remove('open');$('panel').classList.remove('open');
+ $('backBtn').classList.remove('open');$('notice').style.display='block';$('minimap').style.display='block';
+ document.querySelectorAll('.navbtn').forEach(b=>b.classList.toggle('active',b.dataset.panel==='campus'));
+}
+$('backBtn').onclick=backToCampus;$('closeLocation').onclick=backToCampus;
+$('closePanel').onclick=endPanel;document.querySelectorAll('[data-panel]').forEach(b=>b.addEventListener('click',()=>showPanel(b.dataset.panel)));
+document.querySelectorAll('[data-tool]').forEach(b=>b.addEventListener('click',()=>{const tool=b.dataset.tool;if(tool==='reset')backToCampus();if(tool==='labels'){sceneState.labels=!sceneState.labels;showToast('Building labels '+(sceneState.labels?'visible':'hidden'));}if(tool==='heat'){sceneState.heat=!sceneState.heat;for(const name of Object.keys(campusBuildings)){const group=campusBuildings[name].group;group.traverse(o=>{if(o.isMesh&&o.material===matRoof)o.material=sceneState.heat?makeMat(0xff8b52):matRoof;});}showToast(sceneState.heat?'Illustrative heatmap overlay enabled':'3D view restored');}document.querySelectorAll('.toolbtn').forEach(e=>e.classList.toggle('active',e===b&&tool!=='reset'||tool==='3d'&&e.dataset.tool==='3d'));}));
+function rayAt(e){const r=canvas.getBoundingClientRect();mouse.set((e.clientX-r.left)/r.width*2-1,-((e.clientY-r.top)/r.height)*2+1);raycaster.setFromCamera(mouse,camera);if(sceneState.mode==='campus'){const results=raycaster.intersectObjects(pickCampus,false);return results.length?results[0].object.userData.pick:null;}return null;}
+canvas.addEventListener('pointerdown',e=>{if(sceneState.mode==='fly')return;sceneState.pointerDown={x:e.clientX,y:e.clientY,az:sceneState.azimuth,el:sceneState.elevation};canvas.setPointerCapture(e.pointerId);});
+canvas.addEventListener('pointermove',e=>{const d=sceneState.pointerDown;if(d){const dx=e.clientX-d.x,dy=e.clientY-d.y;sceneState.azimuth=d.az-dx*.005;sceneState.elevation=T.MathUtils.clamp(d.el+dy*.004,.22,1.4);setCamOrbit();if(Math.abs(dx)+Math.abs(dy)>6)changeHover(null);}else{const hit=rayAt(e);if(sceneState.mode==='campus')changeHover(hit);else canvas.style.cursor=hit?'pointer':'grab';}});
+canvas.addEventListener('pointerup',e=>{const d=sceneState.pointerDown;sceneState.pointerDown=null;if(!d)return;const moved=Math.hypot(e.clientX-d.x,e.clientY-d.y);if(moved<6){const hit=rayAt(e);if(hit&&sceneState.mode==='campus')enterBuilding(hit);}});
+canvas.addEventListener('wheel',e=>{e.preventDefault();if(sceneState.mode==='fly')return;sceneState.radius=T.MathUtils.clamp(sceneState.radius*(1+Math.sign(e.deltaY)*.09),20,235);setCamOrbit();},{passive:false});
+let last=0;function animate(time){requestAnimationFrame(animate);if(sceneState.animation){const a=sceneState.animation,t=T.MathUtils.clamp((time-a.start)/a.ms,0,1),v=t*t*(3-2*t);camera.position.copy(a.from.pos).lerp(a.to.pos,v);const look=a.from.look.clone().lerp(a.to.look,v);camera.lookAt(look);if(t>=1){const done=a.done;sceneState.animation=null;done();}}if(sceneState.mode==='campus'||sceneState.mode==='focused'){glowTime(time);}renderer.render(campusScene,camera);labelsUpdate();last=time;}
+function glowTime(ms){const p=1+.09*Math.sin(ms*.0018);glowScale.forEach(o=>o.scale.set(o.userData.base*p,o.userData.base*p,o.userData.base*p));}
+// limit animation work to the prominent scene glows.
+const glowScale=[];campusScene.traverse(o=>{if(o.isSprite&&o.scale.x>8){o.userData.base=o.scale.x;glowScale.push(o);}});
+requestAnimationFrame(animate);
+showToast('Welcome to CampusVerse AI — hover and click a DSU building!');
+}
+</script>
+</body></html>

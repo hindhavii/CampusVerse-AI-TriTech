@@ -1,0 +1,1 @@
+"""CampusVerse AI demo modules."""
